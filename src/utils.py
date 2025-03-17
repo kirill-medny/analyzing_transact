@@ -11,12 +11,15 @@ from tinkoff.invest.services import InstrumentsService
 import json
 import logging
 import re
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
-
+# Настройка логирования
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 load_dotenv("../.env")
 API_TOKEN = os.getenv("API_TOKEN")
+DEFAULT_REPORT_FILENAME = "report_{}.json"
+REPORTS_DIRECTORY = "reports"
 
 def get_greeting(current_time: time) -> str:
     """
@@ -348,6 +351,140 @@ def search_person_transfers(df:pd.DataFrame) -> str:
         logging.exception(f"Произошла ошибка: {e}")
         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
 
+
+
+def report_decorator(filename: Optional[str] = None):
+    """
+    Декоратор для функций-отчетов, записывающий результат в файл.
+    Результаты сохраняются в папку 'reports' в корневом каталоге проекта.
+    Имя файла отчета включает имя функции, если имя файла не передано явно.
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            try:
+                result = func(*args, **kwargs)
+
+                # Ensure reports directory exists
+                if not os.path.exists(REPORTS_DIRECTORY):
+                    os.makedirs(REPORTS_DIRECTORY)
+
+                if filename:
+                    filepath = os.path.join(REPORTS_DIRECTORY, filename)  # Combine directory and filename
+                else:
+                    base_filename = DEFAULT_REPORT_FILENAME.format(func.__name__, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))  # Include func name
+                    filepath = os.path.join(REPORTS_DIRECTORY, base_filename)  # Combine directory and filename
+
+                with open(filepath, "w", encoding="utf-8") as f:
+                    if isinstance(result, pd.DataFrame):  # Check if result is a DataFrame
+                        json.dump(result.to_dict(orient="records"), f, indent=2, ensure_ascii=False, default=str)
+                    else:
+                        json.dump(result, f, indent=2, ensure_ascii=False, default=str) #  json.dump работает и со словарями, и со списками
+                logging.info(f"Отчет {func.__name__} записан в файл: {filepath}")
+                return result
+            except Exception as e:
+                logging.exception(f"Ошибка при выполнении отчета {func.__name__}: {e}")
+                return pd.DataFrame({"error": [str(e)]})  # Return an empty dataframe, but keep the processing flow
+        return wrapper
+    return decorator
+
+
+@report_decorator()  # Use default filename
+def spending_by_category(transactions: pd.DataFrame,
+                         category: str,
+                         date: Optional[str] = None) -> pd.DataFrame:
+    """
+    Возвращает траты по заданной категории за последние три месяца (от переданной даты).
+    """
+    try:
+        if date is None:
+            date = datetime.now().strftime("%Y-%m-%d")  # YYYY-MM-DD
+        report_date = datetime.strptime(date, "%Y-%m-%d")  # Ensure data are passed using this format
+
+        start_date = report_date - timedelta(days=3 * 30)  # Approximate 3 months
+
+        filtered_transactions = transactions[
+            (transactions['Дата операции'] >= start_date) &
+            (transactions['Дата операции'] <= report_date) &
+            (transactions['Категория'] == category) &
+            (transactions['Сумма платежа'] < 0)  # Only expenses
+            ]
+
+        # Aggregating spending amount by date
+        spending = filtered_transactions.groupby('Дата операции')[
+            'Сумма платежа'].sum().abs()  # .reset_index()   #abs to return positive value
+
+        return spending.to_frame()  # convert series to DataFrame
+
+    except Exception as e:
+        logging.exception(f"Ошибка при формировании отчета spending_by_category: {e}")
+        return pd.DataFrame({"error": [str(e)]})
+
+
+@report_decorator(filename="weekday_spending_report.json")  # use specified filename
+def spending_by_weekday(transactions: pd.DataFrame,
+                        date: Optional[str] = None) -> pd.DataFrame:
+    """
+    Возвращает средние траты в каждый из дней недели за последние три месяца (от переданной даты).
+    """
+    try:
+        if date is None:
+            date = datetime.now().strftime("%Y-%m-%d")  # YYYY-MM-DD
+        report_date = datetime.strptime(date, "%Y-%m-%d")
+
+        start_date = report_date - timedelta(days=3 * 30)  # Approximate 3 months
+
+        filtered_transactions = transactions[
+            (transactions['Дата операции'] >= start_date) &
+            (transactions['Дата операции'] <= report_date) &
+            (transactions['Сумма платежа'] < 0)  # Only expenses
+            ].copy()  # Added .copy() to avoid warnings
+
+        # Extract weekday
+        filtered_transactions['День недели'] = filtered_transactions['Дата операции'].dt.day_name(locale='ru_RU')
+
+        # Calculate average spending per weekday
+        weekday_spending = filtered_transactions.groupby('День недели')[
+            'Сумма платежа'].mean().abs()  # Abs() to return a positive value
+
+        return weekday_spending.to_frame()
+    except Exception as e:
+        logging.exception(f"Ошибка при формировании отчета spending_by_weekday: {e}")
+        return pd.DataFrame({"error": [str(e)]})
+
+
+@report_decorator()  # use default filename
+def spending_by_workday(transactions: pd.DataFrame,
+                        date: Optional[str] = None) -> pd.DataFrame:
+    """
+    Выводит средние траты в рабочий и в выходной день за последние три месяца (от переданной даты).
+    """
+    try:
+        if date is None:
+            date = datetime.now().strftime("%Y-%m-%d")  # YYYY-MM-DD
+        report_date = datetime.strptime(date, "%Y-%m-%d")
+
+        start_date = report_date - timedelta(days=3 * 30)  # Approximate 3 months
+
+        filtered_transactions = transactions[
+            (transactions['Дата операции'] >= start_date) &
+            (transactions['Дата операции'] <= report_date) &
+            (transactions['Сумма платежа'] < 0)  # Only expenses
+            ].copy()  # Added .copy() to avoid warnings
+
+        # Determine if it's a workday or weekend
+        filtered_transactions['Тип дня'] = filtered_transactions['Дата операции'].apply(
+            lambda x: 'Выходной' if x.weekday() >= 5 else 'Рабочий'
+        )
+
+        # Calculate average spending per day type
+        workday_spending = filtered_transactions.groupby('Тип дня')[
+            'Сумма платежа'].mean().abs()  # Abs() to return positive number
+
+        return workday_spending.to_frame()
+
+    except Exception as e:
+        logging.exception(f"Ошибка при формировании отчета spending_by_workday: {e}")
+        return pd.DataFrame({"error": [str(e)]})
 
 
 
