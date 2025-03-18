@@ -1,4 +1,4 @@
-from datetime import datetime, time, datetime, timedelta, date
+from datetime import time, datetime, timedelta, date
 import pandas as pd
 import os
 import numpy as np
@@ -20,6 +20,8 @@ load_dotenv("../.env")
 API_TOKEN = os.getenv("API_TOKEN")
 DEFAULT_REPORT_FILENAME = "report_{}.json"
 REPORTS_DIRECTORY = "reports"
+
+# Функции для страницы "Главная"
 
 def get_greeting(current_time: time) -> str:
     """
@@ -50,11 +52,13 @@ def get_card_data(df: pd.DataFrame) -> list:
         })
     return card_data
 
+
 def get_top_transactions(df: pd.DataFrame) -> list:
     """
     Получает топ-5 транзакций по сумме платежа.
     """
-    top_transactions = df.sort_values(by='Сумма платежа', ascending=False).head(5)
+    # Сортируем по возрастанию, так как большие отрицательные числа - это большие расходы
+    top_transactions = df.sort_values(by='Сумма платежа', ascending=True).head(5) #True для фортировки отрицательных значений, False для положительных
     return [{
         "date": row['Дата операции'].strftime('%d.%m.%Y'),
         "amount": round(row['Сумма платежа'], 2),
@@ -62,6 +66,7 @@ def get_top_transactions(df: pd.DataFrame) -> list:
         "description": row['Описание']
     } for index, row in top_transactions.iterrows()]
 
+# Функции для страницы "Главная" и страницы "События"
 
 def get_currency_rates(currencies):
     """
@@ -140,6 +145,8 @@ def filter_transactions_by_month(df: pd.DataFrame, date: datetime) -> pd.DataFra
     start_of_month = date.replace(day=1)
     return df[(df['Дата операции'] >= start_of_month) & (df['Дата операции'] <= date)]
 
+# Функции для страницы "События"
+
 def get_date_range(date: datetime, data_range: str="M") -> tuple:
     """
     Определяет диапазон дат в зависимости от переданного параметра data_range.
@@ -170,6 +177,7 @@ def filter_transactions_by_date_range(df: pd.DataFrame, start_date: datetime, en
     """
     return df[(df['Дата операции'] >= start_date) & (df['Дата операции'] <= end_date)]
 
+
 def get_expenses_data(df: pd.DataFrame) -> dict:
     """
     Получает данные о расходах: общая сумма, основные категории, переводы и наличные.
@@ -180,8 +188,8 @@ def get_expenses_data(df: pd.DataFrame) -> dict:
     # Общая сумма расходов
     total_amount = round(expenses_df['Сумма платежа'].sum())
 
-    # Основные категории
-    category_amounts = expenses_df.groupby('Категория')['Сумма платежа'].sum().abs().sort_values(ascending=False)
+    # Основные категории (исключаем "Наличные" и "Переводы")
+    category_amounts = expenses_df[~expenses_df['Категория'].isin(['Наличные', 'Переводы'])].groupby('Категория')['Сумма платежа'].sum().abs().sort_values(ascending=False)
     top_categories = category_amounts.head(7)
     other_amount = category_amounts[7:].sum()
     main = []
@@ -228,12 +236,11 @@ def get_income_data(df: pd.DataFrame) -> dict:
     }
 
 
+# Функции для раздела "Сервисы"
 
 
 
-
-
-def analyze_cashback_categories(df:pd.DataFrame, year: int, month: int) -> str:
+def analyze_cashback_categories(df: pd.DataFrame, year: int, month: int) -> str:
     """
     Анализирует, какие категории были наиболее выгодными для выбора в качестве
     категорий повышенного кешбэка в указанном месяце года.
@@ -241,10 +248,10 @@ def analyze_cashback_categories(df:pd.DataFrame, year: int, month: int) -> str:
     try:
         logging.info(f"Анализ выгодности категорий кешбэка за {year}-{month}")
 
-        # Фильтруем данные по году и месяцу
+        # Фильтруем данные по году и месяцу, и только отрицательные суммы (расходы)
         filtered_data = df[
-            (df['Дата операции'].dt.year == year) & (df['Дата операции'].dt.month == month)
-        ]
+            (df['Дата операции'].dt.year == year) & (df['Дата операции'].dt.month == month) & (df['Сумма платежа'] < 0)
+        ].copy()
 
         # Группируем по категориям и суммируем траты
         category_spending = filtered_data.groupby('Категория')['Сумма платежа'].sum().abs()
@@ -309,6 +316,25 @@ def simple_search(search_string: str, df: pd.DataFrame) -> str:
         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
 
 
+# def search_phone_numbers(df:pd.DataFrame) -> str:
+#     """
+#     Возвращает транзакции, содержащие в описании мобильные номера.
+#     """
+#     try:
+#         logging.info("Поиск транзакций с телефонными номерами.")
+#
+#         # 1. Выполняем поиск
+#         phone_number_pattern = re.compile(r'\+?\d{1,3}\s?\(?\d{3}\)?\s?\d{1,3}[-\s]?\d{2}[-\s]?\d{2}', re.IGNORECASE)
+#         phone_transactions = df[df['Описание'].str.contains(phone_number_pattern, regex=True, na=False)]
+#
+#         # 2. Преобразуем в JSON
+#         results = phone_transactions.to_json(orient="records", force_ascii=False)
+#         logging.info(f"Найдено {len(phone_transactions)} транзакций с телефонными номерами.")
+#         return results
+#     except Exception as e:
+#         logging.exception(f"Произошла ошибка: {e}")
+#         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
+
 def search_phone_numbers(df:pd.DataFrame) -> str:
     """
     Возвращает транзакции, содержащие в описании мобильные номера.
@@ -316,11 +342,16 @@ def search_phone_numbers(df:pd.DataFrame) -> str:
     try:
         logging.info("Поиск транзакций с телефонными номерами.")
 
-        # 1. Выполняем поиск
+        # 1. Проверяем, не пустой ли DataFrame
+        if df.empty:
+            logging.info("Пустой DataFrame. Возвращаем пустой список.")
+            return json.dumps([], indent=2, ensure_ascii=False)
+
+        # 2. Выполняем поиск
         phone_number_pattern = re.compile(r'\+?\d{1,3}\s?\(?\d{3}\)?\s?\d{1,3}[-\s]?\d{2}[-\s]?\d{2}', re.IGNORECASE)
         phone_transactions = df[df['Описание'].str.contains(phone_number_pattern, regex=True, na=False)]
 
-        # 2. Преобразуем в JSON
+        # 3. Преобразуем в JSON
         results = phone_transactions.to_json(orient="records", force_ascii=False)
         logging.info(f"Найдено {len(phone_transactions)} транзакций с телефонными номерами.")
         return results
@@ -329,6 +360,49 @@ def search_phone_numbers(df:pd.DataFrame) -> str:
         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
 
 
+# def search_person_transfers(df:pd.DataFrame) -> str:
+#     """
+#     Возвращает транзакции, которые относятся к переводам физлицам.
+#     """
+#     try:
+#         logging.info("Поиск переводов физическим лицам.")
+#
+#         # 1. Выполняем поиск
+#         person_transfer_pattern = re.compile(r'^[А-Я][а-я]+\s[А-Я]\.$')
+#         person_transfers = df[
+#             (df['Категория'] == 'Переводы') &
+#             df['Описание'].str.contains(person_transfer_pattern, regex=True, na=False)
+#         ]
+#
+#         # 2. Преобразуем в JSON
+#         results = person_transfers.to_json(orient="records", force_ascii=False)
+#         logging.info(f"Найдено {len(person_transfers)} переводов физическим лицам.")
+#         return results
+#     except Exception as e:
+#         logging.exception(f"Произошла ошибка: {e}")
+#         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
+
+# def search_person_transfers(df:pd.DataFrame) -> str:
+#     """
+#     Возвращает транзакции, которые относятся к переводам физлицам.
+#     """
+#     try:
+#         logging.info("Поиск переводов физическим лицам.")
+#
+#         # 1. Выполняем поиск
+#         person_transfer_pattern = re.compile(r'^Перевод\s[А-Я][а-я]+\s[А-Я]\.$')
+#         person_transfers = df[
+#             (df['Категория'] == 'Переводы') &
+#             df['Описание'].str.contains(person_transfer_pattern, regex=True, na=False)
+#         ]
+#
+#         # 2. Преобразуем в JSON
+#         results = person_transfers.to_json(orient="records", force_ascii=False)
+#         logging.info(f"Найдено {len(person_transfers)} переводов физическим лицам.")
+#         return results
+#     except Exception as e:
+#         logging.exception(f"Произошла ошибка: {e}")
+#         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
 def search_person_transfers(df:pd.DataFrame) -> str:
     """
     Возвращает транзакции, которые относятся к переводам физлицам.
@@ -336,14 +410,19 @@ def search_person_transfers(df:pd.DataFrame) -> str:
     try:
         logging.info("Поиск переводов физическим лицам.")
 
-        # 1. Выполняем поиск
-        person_transfer_pattern = re.compile(r'^[А-Я][а-я]+\s[А-Я]\.$')
+        # 1. Проверяем, не пустой ли DataFrame
+        if df.empty:
+            logging.info("Пустой DataFrame. Возвращаем пустой список.")
+            return json.dumps([], indent=2, ensure_ascii=False)
+
+        # 2. Выполняем поиск
+        person_transfer_pattern = re.compile(r'^Перевод\s[А-Я][а-я]+\s[А-Я]\.$')
         person_transfers = df[
             (df['Категория'] == 'Переводы') &
             df['Описание'].str.contains(person_transfer_pattern, regex=True, na=False)
         ]
 
-        # 2. Преобразуем в JSON
+        # 3. Преобразуем в JSON
         results = person_transfers.to_json(orient="records", force_ascii=False)
         logging.info(f"Найдено {len(person_transfers)} переводов физическим лицам.")
         return results
@@ -351,7 +430,7 @@ def search_person_transfers(df:pd.DataFrame) -> str:
         logging.exception(f"Произошла ошибка: {e}")
         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
 
-
+# Функции для раздела "Отчеты"
 
 def report_decorator(filename: Optional[str] = None):
     """

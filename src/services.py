@@ -47,4 +47,3 @@ def services():
     print("\nПереводы физическим лицам:")
     print(person_transfers)
 
-
