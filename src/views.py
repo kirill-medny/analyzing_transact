@@ -1,22 +1,21 @@
-import pandas as pd
 import json
-import os
-from dotenv import load_dotenv
-from datetime import datetime, time
 import logging
-import asyncio
+import os
+from datetime import datetime
+
+import pandas as pd
+from dotenv import load_dotenv
 
 from src import utils
 
-
 # Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 load_dotenv("../.env")
 API_TOKEN = os.getenv("API_TOKEN")
 
 
-async def main(datetime_str):
+async def main(datetime_str: str) -> str:
     """
     Главная функция для анализа транзакций и генерации JSON-ответа для главной страницы.
     """
@@ -28,8 +27,8 @@ async def main(datetime_str):
         df = pd.read_excel(file_path)
 
         # 2. Преобразование столбцов с датами
-        df['Дата операции'] = pd.to_datetime(df['Дата операции'],dayfirst=True)
-        df['Дата платежа'] = pd.to_datetime(df['Дата платежа'],dayfirst=True)
+        df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
+        df["Дата платежа"] = pd.to_datetime(df["Дата платежа"], dayfirst=True)
 
         # 3. Входящая дата и время
         input_datetime = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
@@ -58,7 +57,7 @@ async def main(datetime_str):
             "cards": card_data,
             "top_transactions": top_transactions,
             "currency_rates": currency_rates,
-            "stock_prices": stock_prices
+            "stock_prices": stock_prices,
         }
 
         logging.info("Данные успешно обработаны.")
@@ -70,7 +69,8 @@ async def main(datetime_str):
         logging.exception(f"Произошла ошибка: {e}")
         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
 
-async def events(datetime_str, data_range):
+
+async def events(datetime_str: str, data_range: str) -> str:
     """
     Главная функция для анализа транзакций и генерации JSON-ответа для страницы "События".
     """
@@ -81,8 +81,8 @@ async def events(datetime_str, data_range):
         df = pd.read_excel("../data/operations.xlsx")
 
         # 2. Преобразование столбцов с датами
-        df['Дата операции'] = pd.to_datetime(df['Дата операции'], dayfirst=True)
-        df['Дата платежа'] = pd.to_datetime(df['Дата платежа'], dayfirst=True)
+        df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
+        df["Дата платежа"] = pd.to_datetime(df["Дата платежа"], dayfirst=True)
 
         # 3. Входящая дата
         input_datetime = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
@@ -110,7 +110,7 @@ async def events(datetime_str, data_range):
             "expenses": expenses_data,
             "income": income_data,
             "currency_rates": currency_rates,
-            "stock_prices": stock_prices
+            "stock_prices": stock_prices,
         }
 
         logging.info("Данные успешно обработаны.")
@@ -121,9 +121,3 @@ async def events(datetime_str, data_range):
     except Exception as e:
         logging.exception(f"Произошла ошибка: {e}")
         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
-
-
-
-
-
-

@@ -1,20 +1,20 @@
-import os
-import pandas as pd
-import json
-from datetime import datetime
 import logging
 
+import pandas as pd
+
 from src import utils
+
 # Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 # file_path = os.path.join("..", "data", "operations.xlsx")
 # df = pd.read_excel(file_path)
 
-def services():
+
+def services() -> None:
     # 1. Загрузка данных
     df = pd.read_excel("../data/operations.xlsx")
-    df['Дата операции'] = pd.to_datetime(df['Дата операции'],dayfirst=True)
-    df['Дата платежа'] = pd.to_datetime(df['Дата платежа'],dayfirst=True)
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
+    df["Дата платежа"] = pd.to_datetime(df["Дата платежа"], dayfirst=True)
     # Пример использования сервисов
     # Пример 1: Анализ выгодности категорий кешбэка
     year = 2021
@@ -24,10 +24,10 @@ def services():
     print(cashback_analysis)
 
     # Пример 2: Расчет суммы для Инвесткопилки
-    month = "2021-11"
+    month_str: str = "2021-11"
     transactions = df.to_dict(orient="records")
     limit = 50
-    investment_amount = utils.investment_bank(month, transactions, limit)
+    investment_amount = utils.investment_bank(month_str, transactions, limit)  # type: ignore[arg-type]
     print("\nСумма для Инвесткопилки:")
     print(investment_amount)
 
@@ -46,4 +46,3 @@ def services():
     person_transfers = utils.search_person_transfers(df)
     print("\nПереводы физическим лицам:")
     print(person_transfers)
-

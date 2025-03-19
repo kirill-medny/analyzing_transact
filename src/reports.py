@@ -1,19 +1,18 @@
-import pandas as pd
-from datetime import datetime, timedelta
-from typing import Optional
 import logging
-import json
+
+import pandas as pd
+
 from src import utils
 
-
 # Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def reports():
+
+def reports() -> None:
     # 1. Загрузка данных
     df = pd.read_excel("../data/operations.xlsx")
-    df['Дата операции'] = pd.to_datetime(df['Дата операции'],dayfirst=True)
-    df['Дата платежа'] = pd.to_datetime(df['Дата платежа'],dayfirst=True)
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
+    df["Дата платежа"] = pd.to_datetime(df["Дата платежа"], dayfirst=True)
 
     # 2. Пример использования
     report_date = "2021-11-15"  # Формат даты YYYY-MM-DD
@@ -30,4 +29,3 @@ def reports():
     # Траты по выходным дням
     workday_report = utils.spending_by_workday(df, report_date)
     print(f"Траты в рабочий/выходной день:\n{workday_report}\n")
-
