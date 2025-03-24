@@ -26,6 +26,10 @@ async def main(datetime_str: str) -> str:
         file_path = os.path.join("..", "data", "operations.xlsx")
         df = pd.read_excel(file_path)
 
+        # project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Поднимаемся на один уровень вверх от main.py
+        # file_path = os.path.join(project_root, "operations.xlsx")
+        # df = pd.read_excel(file_path)
+
         # 2. Преобразование столбцов с датами
         df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
         df["Дата платежа"] = pd.to_datetime(df["Дата платежа"], dayfirst=True)

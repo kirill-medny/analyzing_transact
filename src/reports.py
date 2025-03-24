@@ -1,6 +1,7 @@
 import logging
 
 import pandas as pd
+import os
 
 from src import utils
 
@@ -9,8 +10,19 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 
 def reports() -> None:
+    """
+    Главная функция для формирования отчетов для раздела "Отчеты".
+    """
     # 1. Загрузка данных
-    df = pd.read_excel("../data/operations.xlsx")
+    # df = pd.read_excel("../data/operations.xlsx")
+
+    file_path = os.path.join("..", "data", "operations.xlsx")
+    df = pd.read_excel(file_path)
+
+    # project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Поднимаемся на один уровень вверх от main.py
+    # file_path = os.path.join(project_root, "operations.xlsx")
+    # df = pd.read_excel(file_path)
+
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
     df["Дата платежа"] = pd.to_datetime(df["Дата платежа"], dayfirst=True)
 
