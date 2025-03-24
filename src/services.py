@@ -1,7 +1,7 @@
 import logging
+import os
 
 import pandas as pd
-import os
 
 from src import utils
 
