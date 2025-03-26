@@ -15,6 +15,7 @@ REPORTS_DIRECTORY = "reports"
 
 # Функции для раздела "Отчеты"
 
+
 def report_decorator(filename: Optional[str] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Декоратор для функций-отчетов, записывающий результат в файл.
@@ -163,14 +164,10 @@ def reports() -> None:
     Главная функция для формирования отчетов для раздела "Отчеты".
     """
     # 1. Загрузка данных
-    # df = pd.read_excel("../data/operations.xlsx")
 
-    file_path = os.path.join("..", "data", "operations.xlsx")
-    df = pd.read_excel(file_path)
-
-    # project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Поднимаемся на один уровень вверх от main.py
-    # file_path = os.path.join(project_root, "operations.xlsx")
-    # df = pd.read_excel(file_path)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_path = os.path.join(project_root, "data", "operations.xlsx")
+    df = pd.read_excel(data_path)
 
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
     df["Дата платежа"] = pd.to_datetime(df["Дата платежа"], dayfirst=True)
@@ -190,4 +187,3 @@ def reports() -> None:
     # Траты по выходным дням
     workday_report = spending_by_workday(df, report_date)
     print(f"Траты в рабочий/выходной день:\n{workday_report}\n")
-

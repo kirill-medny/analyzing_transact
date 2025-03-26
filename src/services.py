@@ -142,6 +142,7 @@ def search_person_transfers(df: pd.DataFrame) -> str:
         logging.exception(f"Произошла ошибка: {e}")
         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
 
+
 # Основная Функция для "Сервисы"
 
 
@@ -150,14 +151,10 @@ def services() -> None:
     Главная функция для расчета Инвесткопилки, простого поиска и поиска телефонных номеров для раздела "Сервисы".
     """
     # 1. Загрузка данных
-    file_path = os.path.join("..", "data", "operations.xlsx")
-    df = pd.read_excel(file_path)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_path = os.path.join(project_root, "data", "operations.xlsx")
+    df = pd.read_excel(data_path)
 
-    # project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Поднимаемся на один уровень вверх от main.py
-    # file_path = os.path.join(project_root, "operations.xlsx")
-    # df = pd.read_excel(file_path)
-
-    # df = pd.read_excel("../data/operations.xlsx")
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
     df["Дата платежа"] = pd.to_datetime(df["Дата платежа"], dayfirst=True)
     # Пример использования сервисов
@@ -191,4 +188,3 @@ def services() -> None:
     person_transfers = search_person_transfers(df)
     print("\nПереводы физическим лицам:")
     print(person_transfers)
-

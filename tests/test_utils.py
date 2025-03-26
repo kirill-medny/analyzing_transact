@@ -8,17 +8,10 @@ import pytest
 import requests
 from pandas import DataFrame
 
-from src.utils import (
-    filter_transactions_by_date_range,
-    filter_transactions_by_month,
-    get_card_data,
-    get_currency_rates,
-    get_date_range,
-    get_expenses_data,
-    get_greeting,
-    get_income_data,
-    get_top_transactions,
-)
+from src.utils import (filter_transactions_by_date_range,
+                       filter_transactions_by_month, get_card_data,
+                       get_currency_rates, get_date_range, get_expenses_data,
+                       get_greeting, get_income_data, get_top_transactions)
 
 # Тесты для get_greeting
 
@@ -247,7 +240,7 @@ def test_get_currency_rates_success(currencies: List[str], mock_response: MagicM
         assert result["GBP"] == 100.0, "Неверный курс GBP"
 
 
-def test_get_currency_rates_api_error():
+def test_get_currency_rates_api_error() -> None:
     """
     Тест для случая, когда API возвращает ошибку.
     """
@@ -714,17 +707,3 @@ def test_get_income_data_empty_categories(sample_income_dataframe: pd.DataFrame)
     df = pd.concat([sample_income_dataframe, empty_category_df], ignore_index=True)
     result = get_income_data(df)
     assert "" in [item["category"] for item in result["main"]], "Пустая категория должна присутствовать"
-
-
-
-
-
-
-
-
-
-
-
-
-
-

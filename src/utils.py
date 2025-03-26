@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from datetime import datetime, time, timedelta
+from datetime import datetime, time as dt_time, timedelta
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -21,7 +21,7 @@ API_TOKEN = os.getenv("API_TOKEN")
 # Функции для страницы "Главная"
 
 
-def get_greeting(current_time: time) -> str:
+def get_greeting(current_time: dt_time) -> str:
     """
     Определяет приветствие в зависимости от времени суток.
     """
@@ -72,7 +72,9 @@ def get_top_transactions(df: pd.DataFrame) -> list:
 # Функции для страницы "Главная" и страницы "События"
 
 
-def get_currency_rates(currencies: List[str], max_retries: int = 3, retry_delay: int = 5) -> Dict[str, Optional[float]]:
+def get_currency_rates(
+    currencies: List[str], max_retries: int = 3, retry_delay: int = 5
+) -> Dict[str, Optional[float]]:
     """
     Получает курсы валют с использованием API с обработкой ошибок и повторными попытками.
     """
@@ -98,11 +100,11 @@ def get_currency_rates(currencies: List[str], max_retries: int = 3, retry_delay:
                 except KeyError as e:
                     print(f"Ошибка: Валюта {currency} не найдена в ответе API: {e}")
                     currency_data[currency] = None
-                    break # Нет смысла повторять, если валюта не найдена
+                    break  # Нет смысла повторять, если валюта не найдена
                 except Exception as e:
                     print(f"Ошибка при обработке данных для {currency}: {e}")
                     currency_data[currency] = None
-                    break # Нет смысла повторять, если есть проблема с обработкой данных
+                    break  # Нет смысла повторять, если есть проблема с обработкой данных
         else:
             continue
 

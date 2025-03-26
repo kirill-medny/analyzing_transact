@@ -5,15 +5,9 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-
-from src.services import (
-    analyze_cashback_categories,
-    investment_bank,
-    search_person_transfers,
-    search_phone_numbers,
-    simple_search,
-)
-
+from src.services import (analyze_cashback_categories, investment_bank,
+                          search_person_transfers, search_phone_numbers,
+                          simple_search)
 
 # Тесты для analyze_cashback_categories
 
@@ -111,6 +105,7 @@ def test_analyze_cashback_categories_rounding(sample_cashback_dataframe: pd.Data
     result = analyze_cashback_categories(rounding_df, year=2024, month=1)
     expected = {"RoundingTest": 1}
     assert json.loads(result) == expected, "Должен возвращать значения округленные до ближайшего целого"
+
 
 # Тесты для investment_bank
 
@@ -287,6 +282,7 @@ def test_simple_search_exception_handling(mock_logging: MagicMock, sample_search
     assert "error" in result_dict, "Должно быть сообщение об ошибке"
     assert mock_logging.exception.called, "Должно быть записано в лог об исключении"
 
+
 # Тесты для search_phone_numbers
 
 
@@ -365,6 +361,7 @@ def test_search_phone_numbers_exception_handling(
     assert "error" in result_dict, "Должно быть сообщение об ошибке"
     assert mock_logging.exception.called, "Должно быть записано в лог об исключении"
 
+
 # Тесты для search_person_transfers
 
 
@@ -440,5 +437,3 @@ def test_search_person_transfers_exception_handling(
     result_dict = json.loads(result)
     assert "error" in result_dict, "Должно быть сообщение об ошибке"
     assert mock_logging.exception.called, "Должно быть записано в лог об исключении"
-
-
