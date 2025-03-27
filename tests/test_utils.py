@@ -8,10 +8,17 @@ import pytest
 import requests
 from pandas import DataFrame
 
-from src.utils import (filter_transactions_by_date_range,
-                       filter_transactions_by_month, get_card_data,
-                       get_currency_rates, get_date_range, get_expenses_data,
-                       get_greeting, get_income_data, get_top_transactions)
+from src.utils import (
+    filter_transactions_by_date_range,
+    filter_transactions_by_month,
+    get_card_data,
+    get_currency_rates,
+    get_date_range,
+    get_expenses_data,
+    get_greeting,
+    get_income_data,
+    get_top_transactions,
+)
 
 # Тесты для get_greeting
 

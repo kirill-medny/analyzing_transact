@@ -128,7 +128,7 @@ def search_person_transfers(df: pd.DataFrame) -> str:
             return json.dumps([], indent=2, ensure_ascii=False)
 
         # 2. Выполняем поиск
-        person_transfer_pattern = re.compile(r"^Перевод\s[А-Я][а-я]+\s[А-Я]\.$")
+        person_transfer_pattern = re.compile(r"^[А-Я][а-я]+\s[А-Я]\.$")
         person_transfers = df[
             (df["Категория"] == "Переводы")
             & df["Описание"].str.contains(person_transfer_pattern, regex=True, na=False)

@@ -5,9 +5,13 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from src.services import (analyze_cashback_categories, investment_bank,
-                          search_person_transfers, search_phone_numbers,
-                          simple_search)
+from src.services import (
+    analyze_cashback_categories,
+    investment_bank,
+    search_person_transfers,
+    search_phone_numbers,
+    simple_search,
+)
 
 # Тесты для analyze_cashback_categories
 
@@ -373,8 +377,7 @@ def test_search_person_transfers_basic(sample_person_transfers_dataframe: pd.Dat
     result_list = json.loads(result)
     assert len(result_list) == 4, "Должно быть найдено 4 перевода физлицам"
     assert all(
-        item["Описание"] in ["Перевод Иванову И.", "Перевод Петрову А.", "Перевод Сидорову Б.", "Перевод Орлову Г."]
-        for item in result_list
+        item["Описание"] in ["Иванову И.", "Петрову А.", "Сидорову Б.", "Орлову Г."] for item in result_list
     ), "Описание должно соответствовать переводу физлицу"
 
 
