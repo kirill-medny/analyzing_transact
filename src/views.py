@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -23,12 +24,9 @@ async def main(datetime_str: str) -> str:
         logging.info(f"Начало обработки данных для даты и времени: {datetime_str}")
 
         # 1. Загрузка данных
-        file_path = os.path.join("..", "data", "operations.xlsx")
-        df = pd.read_excel(file_path)
-
-        # project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Поднимаемся на один уровень вверх от main.py
-        # file_path = os.path.join(project_root, "operations.xlsx")
-        # df = pd.read_excel(file_path)
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        data_path = os.path.join(project_root, "data", "operations.xlsx")
+        df = pd.read_excel(data_path)
 
         # 2. Преобразование столбцов с датами
         df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
@@ -82,7 +80,9 @@ async def events(datetime_str: str, data_range: str) -> str:
         logging.info(f"Начало обработки данных для даты: {datetime_str}, диапазон: {data_range}")
 
         # 1. Загрузка данных
-        df = pd.read_excel("../data/operations.xlsx")
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        data_path = os.path.join(project_root, "data", "operations.xlsx")
+        df = pd.read_excel(data_path)
 
         # 2. Преобразование столбцов с датами
         df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
@@ -125,3 +125,11 @@ async def events(datetime_str: str, data_range: str) -> str:
     except Exception as e:
         logging.exception(f"Произошла ошибка: {e}")
         return json.dumps({"error": str(e)}, indent=2, ensure_ascii=False)
+
+
+if __name__ == "__main__":
+    datetime_str = "2021-11-23 12:53:01"
+    json_main = asyncio.run(main(datetime_str))
+    json_events = asyncio.run(events(datetime_str, "W"))
+    print(json_main)
+    print(json_events)
